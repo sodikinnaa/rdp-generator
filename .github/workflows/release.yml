@@ -1,0 +1,104 @@
+name: Multi-Platform Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Run Tests
+        run: go test -v ./...
+
+  build-and-release:
+    name: Build Multi-Platform & Release
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Build Cross-Platform Binaries
+        run: |
+          set -e
+          VERSION="${GITHUB_REF_NAME:-v1.0.0}"
+          OUTPUT_DIR="dist"
+          mkdir -p "$OUTPUT_DIR"
+
+          TARGETS=(
+            "windows/amd64/.exe"
+            "windows/arm64/.exe"
+            "linux/amd64/"
+            "linux/arm64/"
+            "darwin/amd64/"
+            "darwin/arm64/"
+          )
+
+          for TARGET in "${TARGETS[@]}"; do
+            IFS="/" read -r OS ARCH EXT <<< "$TARGET"
+            BIN_NAME="rdp-generator-${OS}-${ARCH}${EXT}"
+            echo "--> Building ${OS}/${ARCH} to ${BIN_NAME}..."
+
+            GOOS=$OS GOARCH=$ARCH CGO_ENABLED=0 go build \
+              -trimpath \
+              -ldflags="-s -w -X main.version=${VERSION}" \
+              -o "$OUTPUT_DIR/${BIN_NAME}" \
+              main.go
+
+            # Package into archive & keep standalone .exe for direct download
+            cd "$OUTPUT_DIR"
+            if [ "$OS" == "windows" ]; then
+              # Keep standalone .exe copy with version tag
+              STANDALONE_EXE="rdp-generator-${VERSION}-${OS}-${ARCH}.exe"
+              cp "${BIN_NAME}" "${STANDALONE_EXE}"
+              zip -9 "rdp-generator-${VERSION}-${OS}-${ARCH}.zip" "${BIN_NAME}"
+              rm -f "${BIN_NAME}"
+            else
+              tar -czvf "rdp-generator-${VERSION}-${OS}-${ARCH}.tar.gz" "${BIN_NAME}"
+              rm -f "${BIN_NAME}"
+            fi
+            cd ..
+          done
+
+          # Generate SHA256 checksums
+          cd "$OUTPUT_DIR"
+          sha256sum * > "checksums.txt"
+          cd ..
+          echo "Builds completed successfully:"
+          ls -lh "$OUTPUT_DIR"
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.exe
+            dist/*.zip
+            dist/*.tar.gz
+            dist/checksums.txt
+          generate_release_notes: true
+          draft: false
+          prerelease: false

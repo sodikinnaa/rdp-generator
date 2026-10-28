@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Windows Cloud Lab — Komputer Anda</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2334d399'/%3E%3Cpath fill='%23022c22' d='M14 14h16v16H14zm20 0h16v16H34zM14 34h16v16H14zm20 0h16v16H34z'/%3E%3C/svg%3E">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    body { font-family: system-ui, sans-serif; }
+    button, input, select, summary, .button { min-height: 44px; }
+    button, .button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: .75rem; padding: .65rem 1rem; font-weight: 600; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    :focus-visible { outline: 3px solid #34d399; outline-offset: 3px; }
+    input:not([type=checkbox]), select { width: 100%; background: #020617; border: 1px solid #475569; border-radius: .75rem; padding: .75rem; color: #f8fafc; }
+    input[type=checkbox] { width: 20px; height: 20px; flex-shrink: 0; accent-color: #34d399; }
+    label { display: block; }
+    dialog { color: #e2e8f0; background: #0f172a; border: 1px solid #334155; border-radius: 1.5rem; width: min(680px, calc(100% - 2rem)); max-height: 90dvh; padding: 0; }
+    dialog::backdrop { background: rgb(2 6 23 / .85); backdrop-filter: blur(5px); }
+    summary { cursor: pointer; padding: .75rem 0; }
+    .muted { color: #94a3b8; font-size: .875rem; }
+    .primary { background: #34d399; color: #022c22; }
+    .secondary { background: #1e293b; color: #e2e8f0; border: 1px solid #475569; }
+    .notice { padding: .85rem 1rem; border: 1px solid #475569; border-radius: .75rem; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased" x-data="rdpSimpleApp()" x-cloak
+  x-effect="syncDialogs(showWizard, showCreateModal, !!rdpInstance)" @keydown.escape.window="escapeModals()">
+  <header class="border-b border-slate-800 bg-slate-900/80">
+    <div class="max-w-7xl mx-auto p-4 sm:px-8 flex flex-wrap items-center justify-between gap-4">
+      <a href="/" class="flex items-center gap-3 rounded-lg" aria-label="Windows Cloud Lab, kembali ke beranda">
+        <span class="grid grid-cols-2 gap-1 bg-emerald-400 p-2.5 rounded-xl" aria-hidden="true"><span class="w-3 h-3 bg-emerald-950"></span><span class="w-3 h-3 bg-emerald-950"></span><span class="w-3 h-3 bg-emerald-950"></span><span class="w-3 h-3 bg-emerald-950"></span></span>
+        <span><span class="block font-bold tracking-tight">Windows Cloud Lab</span><span class="muted">Kembali ke beranda</span></span>
+      </a>
+      <nav aria-label="Menu utama" class="flex flex-wrap items-center gap-2 text-sm">
+        <span class="px-3 py-2 border border-slate-700 rounded-full muted" x-text="user ? '@' + user.login : 'Akun belum diverifikasi'"></span>
+        <a class="button text-slate-300" href="https://github.com/sodikinnaa/rdp-generator/releases/latest" target="_blank" rel="noopener noreferrer">Bantuan / Unduh</a>
+        <button class="secondary" @click="openSettings()" :disabled="creating">Pengaturan</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
+    <div x-show="publicInsecure" role="alert" class="notice bg-red-950 text-red-100 border-red-600">
+      <strong>Koneksi HTTP publik tidak aman.</strong> Pengisian kredensial dan pembuatan komputer dinonaktifkan. Gunakan HTTPS, localhost, atau 127.0.0.1. Daftar komputer hanya dapat dimuat jika token sudah ada dalam sesi; password tidak diturunkan pada koneksi ini.
+    </div>
+    <div x-show="!secureContext && !publicInsecure" role="alert" class="notice bg-red-950 text-red-100 border-red-600">WebCrypto tidak tersedia. Pengisian kredensial dan pembuatan komputer dinonaktifkan. Gunakan browser yang mendukung WebCrypto melalui HTTPS atau localhost.</div>
+    <div x-show="alertMsg" class="notice flex items-center justify-between gap-3" :class="alertError ? 'bg-rose-950 text-rose-200 border-rose-800' : 'bg-emerald-950 text-emerald-200 border-emerald-800'" role="status" aria-live="polite">
+      <p x-text="alertMsg"></p><button @click="alertMsg = ''" aria-label="Tutup pemberitahuan">Tutup</button>
+    </div>
+    <section class="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 to-emerald-950/40 p-6 sm:p-8 flex flex-wrap items-center justify-between gap-6">
+      <div class="space-y-2">
+        <p class="text-emerald-300 text-sm font-semibold tracking-widest uppercase">Ruang kerja Anda</p>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight" x-text="user ? 'Halo, ' + user.login + '.' : 'Komputer cloud, satu tempat.'"></h1>
+        <p class="text-slate-300" x-text="setupComplete ? 'Pilih komputer untuk mengakses konsol atau melihat panduan RDP.' : 'Selesaikan lima langkah pengaturan sebelum membuat komputer.'"></p>
+        <p class="muted">Status Codespace bukan jaminan kesiapan Windows.</p>
+      </div>
+      <button class="primary" @click="openCreate()" :disabled="!canProvision || creating">Buat Komputer</button>
+    </section>
+
+    <section aria-labelledby="computers-heading" class="space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div><h2 id="computers-heading" class="text-xl font-bold">Komputer Anda</h2><p class="muted" x-text="instances.length + ' total · ' + instances.filter(cs => cs.state === 'Available').length + ' aktif · ' + instances.filter(cs => cs.state === 'Shutdown').length + ' berhenti'"></p></div>
+        <button class="secondary" @click="loadInstances()" :disabled="!githubToken || refreshing">Perbarui status</button>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <div class="flex-1"><label for="search" class="sr-only">Cari komputer atau repository</label><input id="search" type="search" x-model="search" placeholder="Cari komputer atau repository"></div>
+        <div><label for="filter" class="sr-only">Filter status</label><select id="filter" x-model="filter"><option value="all">Semua status</option><option value="active">Aktif</option><option value="stopped">Berhenti</option></select></div>
+      </div>
+      <div x-show="stale" role="status" class="notice bg-amber-950/40 text-amber-200 flex flex-wrap items-center justify-between gap-3"><p>Pembaruan gagal. Data sebelumnya dipertahankan dan mungkin sudah kedaluwarsa.</p><button class="secondary" @click="loadInstances()" :disabled="refreshing">Coba lagi</button></div>
+      <div x-show="initialLoading" class="grid md:grid-cols-2 xl:grid-cols-3 gap-4" role="status" aria-label="Memuat komputer">
+        <template x-for="n in 3" :key="n"><div class="animate-pulse bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5"><div class="h-5 w-2/3 bg-slate-800 rounded"></div><div class="h-12 bg-slate-800 rounded"></div><div class="h-11 bg-slate-800 rounded"></div></div></template>
+      </div>
+      <div x-show="!initialLoading && !loaded && !stale" class="notice text-slate-400">Verifikasi akun di Pengaturan untuk memuat komputer Anda.</div>
+      <div x-show="loaded && !initialLoading && !stale && instances.length === 0" class="text-center p-10 rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 space-y-3">
+        <h3 class="text-lg font-semibold">Belum ada komputer</h3><p class="muted">Mulai dari pengaturan akun, lalu buat komputer pertama Anda.</p><button class="primary" @click="canProvision ? openCreate() : openSettings()" :disabled="!secureContext" x-text="canProvision ? 'Buat Komputer' : 'Lengkapi pengaturan'"></button>
+      </div>
+      <p x-show="loaded && instances.length && !filteredInstances.length" class="muted py-6">Tidak ada komputer yang cocok dengan pencarian ini.</p>
+      <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <template x-for="cs in filteredInstances" :key="cs.name">
+          <article class="rounded-2xl border border-slate-800 bg-slate-900 p-5 flex flex-col gap-4">
+            <div class="flex items-start justify-between gap-2"><h3 class="font-bold text-lg break-all" x-text="displayName(cs)"></h3><span x-show="!cs.credential_scheme" class="text-xs rounded-full px-2 py-1 bg-amber-950 text-amber-200 whitespace-nowrap">Mesin lama</span></div>
+            <div><span class="inline-block rounded-full px-3 py-1 text-xs font-semibold" :class="cs.state === 'Available' ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-300'" x-text="statusLabel(cs)"></span><p class="muted mt-2" x-text="cs.state === 'Available' ? 'Kesiapan Windows belum diverifikasi' : 'Status berdasarkan informasi Codespace.'"></p></div>
+            <p class="text-sm text-slate-300" x-text="(cs.cpus || '—') + ' vCPU · ' + (cs.memory_gb || '—') + ' GB RAM · ' + (cs.storage_gb || '—') + ' GB disk'"></p>
+            <p class="muted break-all" x-text="cs.repo_full_name || 'Repository tidak tersedia'"></p>
+            <div class="mt-auto space-y-2">
+              <template x-if="cs.state === 'Available' && safeURL(cs.web_console_url)"><a class="button primary w-full" :href="safeURL(cs.web_console_url)" target="_blank" rel="noopener noreferrer">Buka konsol web</a></template>
+              <p x-show="cs.state !== 'Available' || !safeURL(cs.web_console_url)" class="muted">Konsol web belum tersedia.</p>
+              <button class="secondary w-full" @click="openRdp(cs)">Panduan RDP</button>
+            </div>
+            <details class="border-t border-slate-800"><summary class="text-sm font-semibold">Detail dan tindakan</summary><div class="space-y-3 text-sm">
+              <dl class="space-y-2 break-all"><dt class="muted">ID Codespace</dt><dd x-text="cs.name"></dd><dt class="muted">Mesin</dt><dd x-text="cs.machine || 'Tidak tersedia'"></dd><dt class="muted">Skema kredensial</dt><dd x-text="cs.credential_scheme || 'Mesin lama, tanpa skema'"></dd></dl>
+              <div class="flex flex-wrap gap-2"><button class="secondary" @click="controlInstance(cs, 'start')" :disabled="!canControl(cs, 'start')">Nyalakan</button><button class="secondary" @click="controlInstance(cs, 'stop')" :disabled="!canControl(cs, 'stop')">Hentikan</button><button class="text-rose-300 border border-rose-900" @click="controlInstance(cs, 'delete')" :disabled="!canControl(cs, 'delete')">Hapus</button></div>
+              <p role="status" class="text-emerald-300" x-show="actions[cs.name] || pending[cs.name]" x-text="actions[cs.name] || (pending[cs.name] ? 'Menunggu perubahan status dari API' : '')"></p>
+            </div></details>
+          </article>
+        </template>
+      </div>
+    </section>
+    <footer class="muted border-t border-slate-800 pt-6">Token GitHub, Tailscale key, kunci pemulihan, dan pengaturan disimpan di localStorage browser ini dan tetap ada setelah browser ditutup. Pada perangkat bersama, gunakan Reset sesi di Pengaturan setelah selesai.</footer>
+  </main>
+
+  <dialog x-ref="wizard" role="dialog" aria-modal="true" aria-labelledby="wizard-title" @cancel.prevent="closeWizard()">
+    <div class="p-5 sm:p-8 space-y-5">
+      <div class="flex justify-between items-start gap-3"><div><p class="text-emerald-300 text-sm">Pengaturan sesi</p><h2 id="wizard-title" class="text-2xl font-bold">Siapkan ruang kerja</h2></div><button class="secondary" @click="closeWizard()" :disabled="!setupComplete && !hadSavedConfiguration">Tutup</button></div>
+      <ol class="grid grid-cols-5 gap-1 text-center text-xs" aria-label="Langkah pengaturan"><template x-for="(title, i) in ['GitHub', 'Repository', 'Tailscale', 'Pemulihan', 'Ringkasan']" :key="title"><li class="border-t-4 pt-2" :class="step === i + 1 ? 'border-emerald-400 text-emerald-300' : 'border-slate-700 text-slate-400'" :aria-current="step === i + 1 ? 'step' : null"><span class="block" x-text="i + 1"></span><span x-text="title"></span></li></template></ol>
+      <p x-show="!secureContext" class="notice bg-red-950 text-red-100" role="alert">Kredensial dan provisioning dinonaktifkan tanpa konteks aman. Buka melalui HTTPS atau localhost dengan dukungan WebCrypto.</p>
+      <p x-show="alertMsg" class="notice" :class="alertError ? 'text-rose-200' : 'text-emerald-200'" role="status" x-text="alertMsg"></p>
+      <fieldset :disabled="!secureContext || verifying || validating" class="space-y-5">
+        <div x-show="step === 1" class="space-y-4">
+          <h3 class="font-semibold text-lg">Hubungkan akun GitHub</h3><p class="muted">Gunakan Personal Access Token dengan akses repository dan Codespaces yang diperlukan. Token diverifikasi ulang setiap halaman dibuka.</p>
+          <label for="github-token">GitHub token</label><div class="flex gap-2"><input id="github-token" :type="showToken ? 'text' : 'password'" x-model="githubToken" @input="invalidateAuth()" autocomplete="off" spellcheck="false"><button class="secondary" @click="showToken = !showToken" :aria-pressed="showToken" x-text="showToken ? 'Sembunyikan' : 'Tampilkan'"></button></div>
+          <a class="button text-emerald-300 underline" href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">Buka halaman resmi Personal Access Token</a>
+          <button class="primary" @click="verifyUser()" :disabled="!githubToken.trim()" x-text="verifying ? 'Memverifikasi GitHub' : 'Verifikasi GitHub'"></button><p x-show="user" class="text-emerald-300" x-text="user ? 'Terverifikasi sebagai @' + user.login : ''"></p>
+        </div>
+        <div x-show="step === 2" class="space-y-4">
+          <h3 class="font-semibold text-lg">Pilih repository</h3><p class="muted">Pilih repository yang dapat diakses akun Anda. Validasi hanya memeriksa akses dan keberadaan devcontainer; repository belum diubah.</p>
+          <label for="repo-search">Cari repository</label><input id="repo-search" type="search" x-model="repoSearch" placeholder="Cari nama repository" :disabled="loadingRepos">
+          <label for="repo-select">Repository</label>
+          <select id="repo-select" x-model="selectedRepo" @change="selectRepository()" :disabled="loadingRepos || !repositories.length">
+            <option value="" x-text="loadingRepos ? 'Memuat repository...' : repositories.length ? 'Pilih repository' : 'Repository tidak ditemukan'"></option>
+            <template x-for="repo in filteredRepositories" :key="repo.full_name"><option :value="repo.full_name" x-text="repo.full_name + (repo.private ? ' (privat)' : '')"></option></template>
+          </select>
+          <div class="flex flex-wrap gap-2"><button class="secondary" @click="loadRepositories()" :disabled="!verified || loadingRepos" x-text="loadingRepos ? 'Memuat repository' : 'Muat ulang daftar'"></button><button class="primary" @click="validateRepository()" :disabled="!verified || !repoOwner.trim() || !repoName.trim()" x-text="validating ? 'Memvalidasi repository' : 'Validasi Repository'"></button></div>
+          <p x-show="repoError" class="notice text-rose-200" role="alert" x-text="repoError"></p>
+          <p x-show="repoValid" class="notice text-emerald-200" x-text="repoValid ? (repoValid.has_devcontainer ? 'Repository valid. Devcontainer ditemukan.' : 'Repository valid. Devcontainer belum ditemukan; penyiapan memerlukan persetujuan saat membuat komputer.') : ''"></p>
+        </div>
+        <div x-show="step === 3" class="space-y-4">
+          <h3 class="font-semibold text-lg">Siapkan jaringan Tailscale</h3><label for="tailscale-key">Tailscale auth key</label><input id="tailscale-key" type="password" x-model="tailscaleKey" @input="setupComplete = false" autocomplete="off" spellcheck="false">
+          <a class="button text-emerald-300 underline" href="https://login.tailscale.com/admin/settings/keys" target="_blank" rel="noopener noreferrer">Buat kunci di halaman resmi Tailscale</a>
+          <label class="flex items-center gap-3"><input type="checkbox" x-model="sameTailnet" @change="setupComplete = false"><span>Perangkat klien saya terhubung ke Tailnet yang sama.</span></label>
+          <label class="flex items-center gap-3"><input type="checkbox" x-model="magicDNS" @change="setupComplete = false"><span>MagicDNS aktif pada Tailnet dan perangkat klien saya.</span></label>
+        </div>
+        <div x-show="step === 4" class="space-y-4">
+          <h3 class="font-semibold text-lg">Simpan kunci pemulihan Anda</h3><p class="muted">Master secret digunakan untuk menurunkan password mesin. Gunakan kunci yang sama untuk mengakses mesin yang sama. Aplikasi tidak dapat memulihkan kunci yang hilang. Membuat kunci baru tidak memulihkan password mesin lama.</p>
+          <label for="master-secret">Kunci pemulihan / master secret (minimal 32 karakter)</label><input id="master-secret" :type="showSecret ? 'text' : 'password'" x-model="masterSecret" @input="secretChanged()" minlength="32" autocomplete="off" spellcheck="false">
+          <div class="flex flex-wrap gap-2"><button class="secondary" @click="generateSecret()">Buat kunci acak</button><button class="secondary" @click="showSecret = !showSecret" :aria-pressed="showSecret" x-text="showSecret ? 'Sembunyikan' : 'Tampilkan'"></button><button class="secondary" @click="copy(masterSecret, 'Kunci pemulihan')" :disabled="masterSecret.length < 32">Salin kunci</button></div>
+          <label class="flex items-center gap-3"><input type="checkbox" x-model="secretStored" @change="setupComplete = false"><span>Saya sudah menyimpan kunci ini secara aman di luar tab ini.</span></label>
+        </div>
+        <div x-show="step === 5" class="space-y-4">
+          <h3 class="font-semibold text-lg">Periksa dan simpan</h3><dl class="rounded-xl bg-slate-950 p-4 space-y-2 break-all"><dt class="muted">Akun GitHub terverifikasi</dt><dd x-text="user ? '@' + user.login : 'Belum terverifikasi'"></dd><dt class="muted">Repository tervalidasi</dt><dd x-text="repoOwner + '/' + repoName"></dd><dt class="muted">Jaringan dan pemulihan</dt><dd>Tailnet dan MagicDNS dikonfirmasi. Kunci pemulihan disimpan sendiri.</dd></dl>
+          <p class="notice text-amber-200">Semua kredensial dan pengaturan disimpan di localStorage browser ini hingga Anda menekan Reset sesi. Jangan gunakan pada perangkat bersama. Repository tidak diubah saat menyimpan.</p>
+        </div>
+      </fieldset>
+      <div class="flex justify-between gap-2 border-t border-slate-700 pt-4"><button class="secondary" @click="step--" :disabled="step === 1 || verifying || validating">Kembali</button><button x-show="step < 5" class="primary" @click="nextStep()" :disabled="!stepReady || !secureContext || verifying || validating">Lanjut</button><button x-show="step === 5" class="primary" @click="saveCredentials()" :disabled="!allReady">Simpan sesi dan selesai</button></div>
+      <button class="text-rose-300" @click="resetSession()" :disabled="verifying || validating">Reset sesi</button>
+    </div>
+  </dialog>
+
+  <dialog x-ref="create" role="dialog" aria-modal="true" aria-labelledby="create-title" @cancel.prevent="cancelCreate()">
+    <div class="p-5 sm:p-8 space-y-5"><h2 id="create-title" class="text-2xl font-bold">Buat komputer baru</h2><p class="muted">Permintaan membuat Codespace. Proses penyiapan Windows berjalan setelahnya dan kesiapan belum diverifikasi.</p>
+      <p x-show="alertMsg" role="status" class="notice" x-text="alertMsg"></p>
+      <fieldset :disabled="creating || !canProvision" class="space-y-4">
+        <label for="machine-name">Nama komputer (opsional)</label><input id="machine-name" x-model="customMachineName" maxlength="48" placeholder="Contoh: pc-kantor"><p class="muted">Jika kosong, sistem akan membuat nama otomatis.</p>
+        <label for="windows-version">Sistem operasi</label><select id="windows-version" x-model="selectedOS"><option value="2022">Windows Server 2022</option><option value="2025">Windows Server 2025</option><option value="2019">Windows Server 2019</option><option value="11">Windows 11 Pro</option></select>
+        <div class="notice text-sm space-y-2"><p>Repository: <strong class="break-all" x-text="repoOwner + '/' + repoName"></strong></p><p>Mesin Codespace: <span class="font-mono">standardLinux32gb</span></p><p>Idle timeout yang diminta: 240 menit.</p></div>
+        <label class="flex items-start gap-3"><input type="checkbox" x-model="billingAck"><span>Saya memahami pemakaian Codespaces mengurangi kuota dan dapat menimbulkan biaya pada akun GitHub saya.</span></label>
+        <label class="flex items-start gap-3"><input type="checkbox" x-model="repoAck"><span>Saya mengizinkan penulisan atau penimpaan .devcontainer/devcontainer.json dan .devcontainer/start-worker.sh pada repository ini.</span></label>
+      </fieldset>
+      <p x-show="creating" role="status" aria-live="polite" class="notice text-emerald-300" x-text="createStage"></p>
+      <div class="flex justify-end gap-3"><button class="secondary" @click="cancelCreate()" :disabled="creating">Batal</button><button class="primary" @click="quickLaunchCustom()" :disabled="creating || !canProvision || !billingAck || !repoAck">Kirim permintaan</button></div>
+    </div>
+  </dialog>
+
+  <dialog x-ref="rdp" role="dialog" aria-modal="true" aria-labelledby="rdp-title" @cancel.prevent="closeRdp()">
+    <div class="p-5 sm:p-8 space-y-5"><div class="flex items-center justify-between gap-3"><h2 id="rdp-title" class="text-2xl font-bold">Panduan RDP</h2><button class="secondary" @click="closeRdp()">Tutup</button></div>
+      <p class="font-semibold break-all" x-text="rdpInstance ? displayName(rdpInstance) : ''"></p>
+      <ol class="list-decimal pl-5 space-y-2 text-slate-300"><li>Hubungkan perangkat Anda ke Tailnet yang sama dan aktifkan MagicDNS.</li><li>Buka aplikasi Remote Desktop, lalu masukkan hostname dan username berikut.</li><li>Masukkan password. Jika belum dapat terhubung, periksa penyiapan Windows melalui konsol web.</li></ol>
+      <p x-show="alertMsg" role="status" class="notice" x-text="alertMsg"></p>
+      <template x-if="rdpInstance"><div class="space-y-4">
+        <label for="rdp-host">Hostname RDP</label><div class="flex gap-2"><input id="rdp-host" readonly :value="rdpInstance.rdp_address || ''" placeholder="Belum tersedia"><button class="secondary" @click="copy(rdpInstance.rdp_address, 'Hostname')" :disabled="!rdpInstance.rdp_address">Salin</button></div>
+        <p x-show="!rdpInstance.rdp_address" class="muted">API belum menyediakan hostname RDP. Periksa jaringan dan penyiapan worker melalui konsol web.</p>
+        <label for="rdp-user">Username</label><div class="flex gap-2"><input id="rdp-user" readonly :value="rdpInstance.username || 'WinAdmin'"><button class="secondary" @click="copy(rdpInstance.username || 'WinAdmin', 'Username')">Salin</button></div>
+        <label for="rdp-password">Password</label><input id="rdp-password" readonly :type="showPassword ? 'text' : 'password'" :value="rdpPassword" autocomplete="off" placeholder="Tidak tersedia">
+        <div class="flex gap-2"><button class="secondary" @click="showPassword = !showPassword" :disabled="!rdpPassword" :aria-pressed="showPassword" x-text="showPassword ? 'Sembunyikan' : 'Tampilkan'"></button><button class="secondary" @click="copy(rdpPassword, 'Password')" :disabled="!rdpPassword">Salin password</button></div>
+        <p x-show="rdpReason" role="status" class="notice text-amber-200" x-text="rdpReason"></p>
+      </div></template>
+    </div>
+  </dialog>
+
+  <script>
+    function rdpSimpleApp() {
+      return {
+        secureContext: !!(globalThis.isSecureContext && globalThis.crypto && crypto.subtle),
+        get publicInsecure() { return !this.secureContext && !['localhost', '127.0.0.1'].includes(location.hostname); },
+        githubToken: '', tailscaleKey: '', masterSecret: '', repoOwner: '', repoName: '',
+        repositories: [], repoSearch: '', selectedRepo: '', loadingRepos: false, repoError: '',
+        user: null, verifiedToken: '', repoValid: null, validatedRepo: '',
+        sameTailnet: false, magicDNS: false, secretStored: false, setupComplete: false,
+        showWizard: false, step: 1, showToken: false, showSecret: false, hadSavedConfiguration: false, restoringSession: false,
+        verifying: false, validating: false, alertMsg: '', alertError: false,
+        instances: [], search: '', filter: 'all', initialLoading: true, loaded: false, refreshing: false, stale: false,
+        actions: {}, pending: {}, epoch: 0, pollTimer: null,
+        showCreateModal: false, creating: false, createStage: '', billingAck: false, repoAck: false,
+        selectedOS: '2022', customMachineName: '',
+        rdpInstance: null, rdpPassword: '', rdpReason: '', showPassword: false,
+        get verified() { return !!this.user && this.verifiedToken === this.githubToken.trim(); },
+        get repositoryReady() { return this.verified && !!this.repoValid && this.validatedRepo === this.repoOwner.trim() + '/' + this.repoName.trim(); },
+        get allReady() { return this.secureContext && this.repositoryReady && !!this.tailscaleKey.trim() && this.sameTailnet && this.magicDNS && this.masterSecret.length >= 32 && this.secretStored; },
+        get canProvision() { return this.setupComplete && this.allReady; },
+        get stepReady() { return [false, this.verified, this.repositoryReady, !!this.tailscaleKey.trim() && this.sameTailnet && this.magicDNS, this.masterSecret.length >= 32 && this.secretStored, this.allReady][this.step]; },
+        get filteredRepositories() {
+          const query = this.repoSearch.trim().toLowerCase();
+          if (!query) return this.repositories;
+          return this.repositories.filter(r => (r.full_name || '').toLowerCase().includes(query));
+        },
+        get filteredInstances() {
+          const query = this.search.toLocaleLowerCase('id');
+          return this.instances.filter(cs => (this.filter === 'all' || (this.filter === 'active' ? cs.state === 'Available' : cs.state === 'Shutdown')) && (this.displayName(cs) + ' ' + (cs.repo_full_name || '')).toLocaleLowerCase('id').includes(query));
+        },
+        storageKeys: ['githubToken', 'tailscaleKey', 'masterSecret', 'repoOwner', 'repoName', 'selectedOS'],
+        async init() {
+          try {
+            for (const key of this.storageKeys) {
+              const val = localStorage.getItem(key) ?? sessionStorage.getItem(key);
+              if (val) {
+                this[key] = val;
+                localStorage.setItem(key, val);
+              }
+              sessionStorage.removeItem(key);
+            }
+            if (this.repoOwner && this.repoName) this.selectedRepo = this.repoOwner + '/' + this.repoName;
+            if (!['11', '2019', '2022', '2025'].includes(this.selectedOS)) this.selectedOS = '2022';
+            const hasSavedCredentials = !!(this.githubToken && this.tailscaleKey && this.masterSecret && this.repoOwner && this.repoName);
+            this.hadSavedConfiguration = hasSavedCredentials;
+            this.restoringSession = hasSavedCredentials;
+            if (!hasSavedCredentials) {
+              this.showWizard = true;
+            } else {
+              this.sameTailnet = true;
+              this.magicDNS = true;
+              this.secretStored = true;
+              this.setupComplete = true;
+            }
+          } catch (_) { this.showAlert('Pengaturan tidak dapat dibaca. Izinkan localStorage browser untuk menyimpan pengaturan.', true); }
+          if (this.githubToken) {
+            await this.verifyUser(true);
+            if (this.verified && this.repoOwner && this.repoName) {
+              await this.validateRepository();
+            }
+            this.setupComplete = this.hadSavedConfiguration && this.allReady;
+          }
+          this.initialLoading = false;
+          this.restoringSession = false;
+        },
+        syncDialogs(wizard, create, rdp) {
+          this.$nextTick(() => {
+            for (const [name, visible] of [['wizard', wizard], ['create', create], ['rdp', rdp]]) {
+              const dialog = this.$refs[name];
+              if (visible && !dialog.open) dialog.showModal();
+              else if (!visible && dialog.open) dialog.close();
+            }
+          });
+        },
+        openSettings() { if (this.creating) return; this.step = 1; this.showWizard = true; this.alertMsg = ''; this.closeRdp(); },
+        closeWizard() { if ((this.setupComplete || this.hadSavedConfiguration) && !this.verifying && !this.validating) { this.showWizard = false; this.showToken = false; this.showSecret = false; } },
+        escapeModals() { if (this.showWizard) this.closeWizard(); else if (this.showCreateModal) this.cancelCreate(); else this.closeRdp(); },
+        nextStep() {
+          if (!this.secureContext || !this.stepReady || this.step >= 5) return;
+          this.step++;
+          if (this.step === 2 && this.verified && !this.repositories.length) this.loadRepositories();
+        },
+        showAlert(message, error = false) { this.alertMsg = message; this.alertError = error; },
+        invalidateRepo() { this.repoValid = null; this.validatedRepo = ''; this.setupComplete = false; },
+        invalidateAuth() {
+          this.epoch++; this.user = null; this.verifiedToken = ''; this.invalidateRepo();
+          this.instances = []; this.loaded = false; this.stale = false; this.initialLoading = false;
+          this.pending = {}; this.closeRdp(); clearInterval(this.pollTimer); this.pollTimer = null;
+        },
+        secretChanged() { this.secretStored = false; this.setupComplete = false; this.closeRdp(); },
+        async verifyUser(silent = false) {
+          if (!this.secureContext || this.verifying || !this.githubToken.trim()) return;
+          const token = this.githubToken.trim();
+          this.invalidateAuth(); const epoch = this.epoch; this.verifying = true;
+          try {
+            const res = await fetch('/api/auth/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
+            const data = await res.json();
+            if (!res.ok || data.valid !== true || !data.user || !data.user.login) throw new Error();
+            if (epoch !== this.epoch) return;
+            this.githubToken = token; this.verifiedToken = token; this.user = data.user;
+            if (!silent) this.showAlert('Akun GitHub berhasil diverifikasi.');
+            this.pollTimer = setInterval(() => { if (this.verified) this.loadInstances(); }, 10000);
+            await Promise.all([this.loadInstances(), this.loadRepositories()]);
+          } catch (_) {
+            if (epoch === this.epoch) this.showAlert('Verifikasi GitHub gagal. Buka Pengaturan untuk memeriksa token atau coba muat ulang halaman.', true);
+          }
+          finally { this.verifying = false; }
+        },
+        async loadRepositories() {
+          if (!this.secureContext || !this.verified || this.loadingRepos) return;
+          const epoch = this.epoch;
+          this.loadingRepos = true; this.repoError = '';
+          try {
+            const res = await fetch('/api/repos', { headers: this.authHeaders() });
+            const data = await res.json();
+            if (!res.ok || !Array.isArray(data)) throw new Error();
+            if (epoch !== this.epoch) return;
+            this.repositories = data.filter(r => r && typeof r.full_name === 'string');
+            if (this.selectedRepo && !this.repositories.some(r => r.full_name === this.selectedRepo)) {
+              this.selectedRepo = ''; this.repoOwner = ''; this.repoName = ''; this.invalidateRepo();
+            }
+            if (!this.repositories.length) this.repoError = 'Tidak ada repository yang dapat diakses. Periksa izin repository pada token GitHub Anda.';
+          } catch (_) { if (epoch === this.epoch) this.repoError = 'Gagal memuat repository. Periksa koneksi dan izin token, lalu muat ulang daftar.'; }
+          finally { this.loadingRepos = false; }
+        },
+        async selectRepository() {
+          this.invalidateRepo();
+          const repo = this.repositories.find(r => r.full_name === this.selectedRepo);
+          this.repoOwner = repo ? repo.full_name.split('/')[0] : '';
+          this.repoName = repo ? repo.full_name.split('/')[1] : '';
+          if (repo) await this.validateRepository();
+        },
+        async validateRepository() {
+          if (!this.secureContext || !this.verified || this.validating || !this.repoOwner.trim() || !this.repoName.trim()) return;
+          this.invalidateRepo(); this.validating = true;
+          const epoch = this.epoch, owner = this.repoOwner.trim(), repo = this.repoName.trim();
+          try {
+            const res = await fetch('/api/repos/validate', { method: 'POST', headers: this.authHeaders(true), body: JSON.stringify({ owner, repo }) });
+            const data = await res.json();
+            if (!res.ok || data.valid !== true) throw new Error();
+            if (epoch !== this.epoch || owner !== this.repoOwner.trim() || repo !== this.repoName.trim()) return;
+            this.repoOwner = owner; this.repoName = repo; this.repoValid = data; this.validatedRepo = owner + '/' + repo;
+            this.showAlert('Repository berhasil divalidasi.');
+          } catch (_) { this.showAlert('Validasi repository gagal. Periksa pemilik, nama repository, dan izin token.', true); }
+          finally { this.validating = false; }
+        },
+        generateSecret() {
+          if (!this.secureContext) return;
+          if (this.masterSecret && !confirm('Mengganti master secret tidak mengubah password mesin yang sudah ada. Simpan kunci lama sebelum melanjutkan. Buat kunci baru?')) return;
+          try {
+            const bytes = crypto.getRandomValues(new Uint8Array(32));
+            this.masterSecret = btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            this.secretChanged(); this.showSecret = false;
+          } catch (_) { this.showAlert('Kunci acak tidak dapat dibuat. Gunakan browser dengan WebCrypto.', true); }
+        },
+        async copy(text, label) {
+          if (!text) return false;
+          try { await navigator.clipboard.writeText(text); this.showAlert(label + ' berhasil disalin.'); return true; }
+          catch (_) { this.showAlert('Gagal menyalin ' + label.toLowerCase() + '. Periksa izin clipboard browser.', true); return false; }
+        },
+        saveCredentials() {
+          if (!this.allReady) return;
+          try {
+            for (const key of this.storageKeys) localStorage.setItem(key, key === 'masterSecret' ? this[key] : this[key].trim());
+          } catch (_) { this.showAlert('Pengaturan belum tersimpan lengkap. Periksa izin localStorage lalu coba lagi.', true); return; }
+          this.setupComplete = true; this.closeWizard(); this.showAlert('Pengaturan tersimpan di browser ini. Gunakan Reset sesi pada perangkat bersama.');
+        },
+        resetSession() {
+          if (this.creating || this.verifying || this.validating || !confirm('Hapus token, kunci, dan pengaturan dari penyimpanan browser ini? Mesin tidak dihapus. Pastikan kunci pemulihan sudah disimpan di tempat aman.')) return;
+          try {
+            for (const key of this.storageKeys) { localStorage.removeItem(key); sessionStorage.removeItem(key); }
+          } catch (_) { this.showAlert('Reset penyimpanan gagal. Data belum direset; periksa izin browser.', true); return; }
+          this.invalidateAuth();
+          for (const key of ['githubToken', 'tailscaleKey', 'masterSecret', 'repoOwner', 'repoName']) this[key] = '';
+          this.repositories = []; this.repoSearch = ''; this.selectedRepo = ''; this.repoError = '';
+          this.sameTailnet = false; this.magicDNS = false; this.secretStored = false; this.actions = {}; this.pending = {};
+          this.showToken = false; this.showSecret = false; this.billingAck = false; this.repoAck = false;
+          this.customMachineName = ''; this.selectedOS = '2022'; this.createStage = ''; this.search = ''; this.filter = 'all';
+          this.step = 1; this.showWizard = true; this.showCreateModal = false; this.alertMsg = '';
+        },
+        authHeaders(json = false) { return { Authorization: `Bearer ${this.githubToken.trim()}`, ...(json ? { 'Content-Type': 'application/json' } : {}) }; },
+        async loadInstances() {
+          if (!this.githubToken.trim() || this.refreshing) return false;
+          const epoch = this.epoch, token = this.githubToken.trim(); this.refreshing = true;
+          try {
+            const res = await fetch('/api/instances', { headers: { Authorization: `Bearer ${token}` } });
+            const data = await res.json();
+            if (!res.ok || (data !== null && !Array.isArray(data))) throw new Error();
+            const instances = data || [];
+            if (instances.some(cs => !cs || typeof cs.name !== 'string')) throw new Error();
+            if (epoch !== this.epoch) return false;
+            this.instances = instances.map(cs => ({ ...cs, password: '' }));
+            for (const [name, action] of Object.entries(this.pending)) {
+              const cs = this.instances.find(item => item.name === name);
+              if (!cs || (action === 'start' && cs.state === 'Available') || (action === 'stop' && cs.state === 'Shutdown')) delete this.pending[name];
+            }
+            this.loaded = true; this.stale = false; return true;
+          } catch (_) { if (epoch === this.epoch) this.stale = true; return false; }
+          finally { this.refreshing = false; if (epoch === this.epoch) this.initialLoading = false; }
+        },
+        displayName(cs) { return (cs.display_name || cs.name).replace(/^rdp-v1-(11|2019|2022|2025)-/, ''); },
+        statusLabel(cs) { return { Available: 'Codespace aktif', Provisioning: 'Sedang disiapkan', Starting: 'Sedang dinyalakan', Shutdown: 'Dihentikan', Unknown: 'Status tidak diketahui' }[cs.state] || 'Status tidak diketahui'; },
+        safeURL(value) { try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : ''; } catch (_) { return ''; } },
+        async derivePassword(name) {
+          if (!this.secureContext) throw new Error('WebCrypto tidak tersedia.');
+          const enc = new TextEncoder();
+          const key = await crypto.subtle.importKey('raw', enc.encode(this.masterSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+          const sig = await crypto.subtle.sign('HMAC', key, enc.encode(name));
+          const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+          return 'Aa1!' + hex.slice(0, 24);
+        },
+        async openRdp(cs) {
+          this.closeRdp(); this.alertMsg = ''; this.rdpInstance = cs;
+          if (!this.secureContext) this.rdpReason = 'Password tidak diturunkan karena konteks tidak aman atau WebCrypto tidak tersedia. Gunakan HTTPS atau localhost.';
+          else if (!cs.credential_scheme) this.rdpReason = 'Mesin lama tanpa skema kredensial. Password tidak dapat diturunkan di halaman ini; periksa kredensial di dalam Codespace pada state yang sudah ada.';
+          else if (cs.credential_scheme !== 'hmac-sha256-v1') this.rdpReason = 'Skema kredensial mesin ini tidak didukung untuk derivasi password.';
+          else if (this.masterSecret.length < 32) this.rdpReason = 'Master secret minimal 32 karakter diperlukan. Masukkan kunci asli mesin ini di Pengaturan.';
+          else {
+            this.rdpReason = 'Menyiapkan kredensial dari kunci sesi…';
+            try {
+              const password = await this.derivePassword(cs.name);
+              if (this.rdpInstance !== cs) return;
+              this.rdpPassword = password; this.rdpReason = 'Password diturunkan dari master secret sesi, bukan diverifikasi terhadap Windows. Jika login gagal, pastikan kunci asli mesin digunakan.';
+            } catch (_) { if (this.rdpInstance === cs) this.rdpReason = 'Derivasi password gagal. Periksa dukungan WebCrypto dan master secret Anda.'; }
+          }
+        },
+        closeRdp() { this.rdpInstance = null; this.rdpPassword = ''; this.rdpReason = ''; this.showPassword = false; },
+        openCreate() { if (!this.canProvision || this.creating) return; this.billingAck = false; this.repoAck = false; this.alertMsg = ''; this.showCreateModal = true; },
+        cancelCreate() { if (!this.creating) this.showCreateModal = false; },
+        async quickLaunchCustom() {
+          if (this.creating || !this.canProvision || !this.billingAck || !this.repoAck) return;
+          if (!['11', '2019', '2022', '2025'].includes(this.selectedOS)) { this.showAlert('Pilih sistem operasi yang didukung.', true); return; }
+          this.creating = true; this.alertMsg = ''; let provisioned = false;
+          try {
+            this.createStage = 'Menyiapkan repository';
+            const setup = await fetch('/api/repos/setup-devcontainer', { method: 'POST', headers: this.authHeaders(true), body: JSON.stringify({ owner: this.repoOwner.trim(), repo: this.repoName.trim() }) });
+            const setupData = await setup.json();
+            if (!setup.ok || setupData.error) throw new Error('setup');
+            this.createStage = 'Mengirim permintaan Codespace';
+            const res = await fetch('/api/provision', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ github_token: this.githubToken.trim(), tailscale_key: this.tailscaleKey.trim(), master_secret: this.masterSecret, repo_owner: this.repoOwner.trim(), repo_name: this.repoName.trim(), windows_version: this.selectedOS, display_name: this.customMachineName.trim(), machine_type: 'standardLinux32gb', idle_timeout_mins: 240 }) });
+            if (!res.ok) throw new Error('provision');
+            provisioned = true; this.createStage = 'Memuat status terbaru';
+            const refreshed = await this.loadInstances();
+            this.showAlert(refreshed ? 'Permintaan pembuatan diterima. Kesiapan Windows belum diverifikasi.' : 'Permintaan pembuatan diterima, tetapi daftar belum diperbarui. Coba perbarui status; jangan kirim ulang permintaan.');
+            this.customMachineName = ''; this.showCreateModal = false;
+          } catch (_) { this.showAlert('Permintaan belum dapat dipastikan selesai. Repository mungkin sudah berubah. Perbarui daftar komputer sebelum mencoba lagi untuk menghindari duplikasi.', true); }
+          finally { this.creating = false; if (!provisioned) this.createStage = ''; }
+        },
+        canControl(cs, action) {
+          if (!this.secureContext || !this.verified || this.creating || this.actions[cs.name] || this.pending[cs.name]) return false;
+          return action === 'delete' || (action === 'start' && cs.state === 'Shutdown') || (action === 'stop' && cs.state === 'Available');
+        },
+        async controlInstance(cs, action) {
+          if (!['start', 'stop', 'delete'].includes(action) || !this.canControl(cs, action)) return;
+          const name = this.displayName(cs);
+          if (action === 'delete') {
+            if (prompt('Ketik nama komputer persis untuk menghapus: ' + name) !== name) return;
+            if (!confirm('Hapus komputer "' + name + '"? Data di dalam Codespace akan dihapus. Tindakan ini tidak dapat dibatalkan.')) return;
+          } else if (!confirm((action === 'start' ? 'Nyalakan' : 'Hentikan') + ' komputer "' + name + '"?')) return;
+          const epoch = this.epoch;
+          this.actions[cs.name] = { start: 'Mengirim perintah nyalakan', stop: 'Mengirim perintah hentikan', delete: 'Menghapus komputer' }[action];
+          try {
+            const res = await fetch('/api/instances/' + encodeURIComponent(cs.name) + (action === 'delete' ? '' : '/' + action), { method: action === 'delete' ? 'DELETE' : 'POST', headers: this.authHeaders() });
+            if (!res.ok) throw new Error();
+            if (epoch !== this.epoch) return;
+            this.pending[cs.name] = action;
+            if (action === 'delete') { this.instances = this.instances.filter(item => item.name !== cs.name); delete this.pending[cs.name]; }
+            this.showAlert('Perintah diterima. Perubahan status akan diperbarui dari API.');
+            await this.loadInstances();
+          } catch (_) { if (epoch === this.epoch) this.showAlert('Perintah gagal atau hasilnya belum diketahui. Perbarui status sebelum mencoba lagi.', true); }
+          finally { delete this.actions[cs.name]; }
+        }
+      };
+    }
+  </script>
+</body>
+</html>
