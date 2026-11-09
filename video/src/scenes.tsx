@@ -316,7 +316,7 @@ export const QuickstartScene: React.FC = () => {
           </Reveal>
           <div style={{ height: 30 }} />
           {steps.map((s, i) => {
-            const on = frame > 60 + i * 30;
+            const on = frame > [72, 120, 165][i];
             return (
               <Reveal key={s} delay={10 + i * 10}>
                 <div
