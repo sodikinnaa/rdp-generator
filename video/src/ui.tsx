@@ -160,6 +160,11 @@ export const Terminal: React.FC<{
     return line.slice(0, take);
   });
   const cursorOn = Math.floor(frame / 15) % 2 === 0;
+  // Cursor sits only on the last line that has any text so far.
+  let cursorLine = -1;
+  rendered.forEach((l, i) => {
+    if (l.length > 0) cursorLine = i;
+  });
   return (
     <div
       style={{
@@ -192,9 +197,7 @@ export const Terminal: React.FC<{
       </div>
       <div style={{ padding: "28px 32px", lineHeight: 1.7, minHeight: 240 }}>
         {rendered.map((l, i) => {
-          const isLast =
-            i === rendered.length - 1 ||
-            rendered[i + 1].length === 0;
+          const isLast = i === cursorLine;
           const isCmd = lines[i].startsWith("$");
           return (
             <div key={i} style={{ whiteSpace: "pre" }}>
