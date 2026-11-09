@@ -1,0 +1,129 @@
+=====================================================================
+ISI FORM PRODUK (copy-paste ke halaman "Add Product")
+=====================================================================
+
+--- DETAILS ---------------------------------------------------------
+
+Image         : Cover 1:1 (1080x1080). Saran isi cover:
+                - Judul besar: "RDP Windows Gratis di GitHub Codespaces"
+                - Sub: "Tanpa VPS · Tanpa buka port · Aman via Tailscale"
+                - Mockup layar Windows Server + logo GitHub/Tailscale
+                Tambah 3-4 gambar lagi: screenshot dashboard, hasil RDP
+                login, daftar fitur, dan bukti testimoni (kalau sudah ada).
+Video         : (opsional) demo 60-90 detik: deploy -> dapat IP -> RDP login.
+
+Title (maks 100 karakter):
+RDP Generator - Windows Server di GitHub Codespaces + Tailscale (Tanpa VPS)
+
+Description:
+-----------------------------------------------------------------
+Butuh Windows / RDP tapi tidak mau bayar VPS bulanan?
+
+RDP Generator adalah aplikasi 1 file (single binary) dengan dashboard
+web modern untuk membuat Windows Server (2019 / 2022 / 2025) atau
+Windows 11 Pro langsung di GitHub Codespaces, lalu diakses via Remote
+Desktop dengan aman lewat Tailscale VPN.
+
+YANG KAMU DAPAT
+- Panduan akses + kumpulan link lengkap (file TXT/PDF)
+- File aplikasi RDP Generator (Windows .exe / Linux / macOS)
+- Panduan step-by-step: buat token, auth key, deploy, login RDP
+- Tips hemat kuota Codespaces (120 core-hours gratis per bulan)
+- Update gratis selama produk tersedia
+
+KEUNGGULAN
+- Tanpa VPS, tanpa kartu kredit khusus hosting
+- Zero public port: RDP (3389) & noVNC (8006) hanya lewat Tailscale
+- Hardware virtualization (KVM) -> Windows jalan lebih ngebut
+- Disk Windows tersimpan permanen, bisa resume setelah restart
+- Rahasia (Tailscale key) dienkripsi sebelum dikirim ke GitHub
+- Cocok untuk: belajar Windows Server, lab testing, akses Windows dari
+  HP/Mac/Linux, project sementara
+
+KEBUTUHAN
+- Akun GitHub (gratis) + Personal Access Token (scope: codespace)
+- Akun Tailscale (gratis) + Auth Key
+- Laptop/PC/HP dengan aplikasi Remote Desktop
+- Internet stabil
+
+BELUM BISA INSTALL SENDIRI?
+Pilih add-on "Sesi Zoom Instalasi" (Rp 75.000) - dipandu langsung
+sampai Windows kamu bisa di-RDP.
+
+CATATAN PENTING
+- Produk digital: file dikirim otomatis setelah pembayaran.
+- Kuota Codespaces mengikuti aturan GitHub (akun Free: 120
+  core-hours + 15 GB storage / bulan). Mesin 4-core = 4 core-hours
+  per jam.
+- Windows yang dipakai adalah versi Evaluation resmi Microsoft.
+- Gunakan hanya untuk keperluan legal dan sesuai Terms of Service
+  GitHub, Tailscale, dan Microsoft.
+-----------------------------------------------------------------
+
+--- PLATFORM / UPLOAD ----------------------------------------------
+
+Pilih tab        : PDF/Ebook  (upload "02-panduan-akses.txt" versi PDF)
+                   ATAU G-drive (taruh folder berisi: panduan + .exe)
+Rekomendasi      : G-drive. Isi folder:
+                     1. 02-panduan-akses.txt (atau .pdf)
+                     2. rdp-generator-windows-amd64.zip
+                     3. rdp-generator-linux-amd64.tar.gz
+                     4. rdp-generator-darwin-arm64.tar.gz
+                   (ambil dari GitHub Releases, lihat panduan)
+                   Set sharing: "Anyone with the link - Viewer".
+
+--- PRICING ---------------------------------------------------------
+
+Allow Customer to pay what they want : OFF
+Flash Sale                           : ON saat launching (opsional)
+Price                                : 3999
+Currency                             : IDR
+Sale Price (Optional)                : kosong (atau 2999 untuk 3 hari
+                                       pertama sebagai promo launching)
+Item Quantity                        : Unlimited
+Limit qty per checkout               : 1
+Purchase Button                      : Buy Now
+
+Add On
+  - Nama  : Sesi Zoom Instalasi
+  - Harga : Rp 75.000
+  - Deskripsi add-on: "Pendampingan 1x sesi Zoom (+/- 45-60 menit)
+    sampai RDP Windows bisa login. Jadwal dikonfirmasi via WhatsApp."
+  - "Require buyers to select at least one add-on" : OFF
+    (produk utama Rp 3.999 tetap bisa dibeli tanpa add-on)
+
+Review (0/10)
+  Tambah manual 3-5 review awal HANYA dari pengguna asli yang
+  benar-benar sudah mencoba (jangan karangan). Minta teman/rekan
+  mencoba gratis lalu tulis ulasan jujur.
+
+--- ADVANCE OPTION --------------------------------------------------
+
+Release Time                 : kosong (rilis langsung)
+Fee                          : Rp 600/transaksi (otomatis dari platform)
+Enable WhatsApp notification : ON
+Custom Message               :
+  Halo {nama}! Terima kasih sudah beli RDP Generator.
+  Link panduan akses & file ada di halaman pesanan kamu.
+  Mulai dari bagian "Langkah Cepat" di panduan.
+  Mau dipandu via Zoom? Balas chat ini.
+Show Unit Sold               : ON (social proof, aktifkan kalau sudah
+                               ada beberapa penjualan)
+Block Layout                 : Default (atau Large Image kalau cover
+                               kamu kuat)
+
+--- QUESTION FOR CUSTOMER -------------------------------------------
+
+Name   : Required
+Phone  : Required (dipakai WhatsApp notif + jadwal Zoom)
+(Opsional tambah) "Sistem operasi kamu? (Windows/Mac/Linux/HP)" -
+  tapi ini fitur PRO; lewati kalau belum upgrade.
+
+=====================================================================
+HITUNGAN KEUNTUNGAN
+=====================================================================
+Produk Rp 3.999 - fee Rp 600 = sekitar Rp 3.399 bersih / transaksi
+  (belum termasuk potongan payment gateway kalau ada).
+Add-on Zoom Rp 75.000 - fee = sekitar Rp 74.400 per sesi.
+Saran: dorong add-on Zoom sebagai sumber profit utama; produk Rp 3.999
+berfungsi sebagai "pintu masuk" (low-ticket).

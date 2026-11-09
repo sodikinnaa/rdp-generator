@@ -1,0 +1,138 @@
+=====================================================================
+PANDUAN AKSES - RDP GENERATOR
+Windows Server di GitHub Codespaces + Tailscale
+=====================================================================
+
+Terima kasih sudah membeli! File ini berisi semua link dan langkah
+yang kamu butuhkan, urut dari awal sampai bisa login RDP.
+
+Butuh bantuan? Hubungi penjual via WhatsApp (nomor ada di notifikasi
+pesanan) atau pilih add-on "Sesi Zoom Instalasi".
+
+---------------------------------------------------------------------
+A. DAFTAR LINK KEBUTUHAN
+---------------------------------------------------------------------
+
+[1] Aplikasi RDP Generator (download rilis terbaru)
+    https://github.com/sodikinnaa/rdp-generator/releases/latest
+    -> Windows : rdp-generator-vX.Y.Z-windows-amd64.zip (atau .exe)
+    -> Linux   : rdp-generator-vX.Y.Z-linux-amd64.tar.gz
+    -> macOS   : rdp-generator-vX.Y.Z-darwin-arm64.tar.gz (chip M1/M2/M3)
+                 rdp-generator-vX.Y.Z-darwin-amd64.tar.gz (Intel)
+    -> Cek keaslian file: checksums.txt di halaman yang sama
+
+[2] Source code & dokumentasi
+    https://github.com/sodikinnaa/rdp-generator
+
+[3] Daftar akun GitHub (gratis)
+    https://github.com/signup
+
+[4] Buat GitHub Personal Access Token (Classic)
+    https://github.com/settings/tokens/new
+    -> Centang scope: codespace
+    -> Salin token (hanya tampil sekali)
+
+[5] Cek kuota & kelola Codespaces
+    https://github.com/codespaces
+    Billing/kuota: https://github.com/settings/billing
+
+[6] Daftar akun Tailscale (gratis)
+    https://login.tailscale.com/start
+
+[7] Buat Tailscale Auth Key
+    https://login.tailscale.com/admin/settings/keys
+    -> Generate auth key, aktifkan: Reusable, Ephemeral, Pre-approved
+
+[8] Download Tailscale untuk perangkat kamu
+    https://tailscale.com/download
+    (Windows, macOS, Linux, Android, iOS)
+
+[9] Aplikasi Remote Desktop
+    - Windows : bawaan, buka "mstsc"
+    - macOS   : https://apps.apple.com/app/microsoft-remote-desktop/id1295203466
+    - Android : https://play.google.com/store/apps/details?id=com.microsoft.rdc.androidx
+    - iOS     : https://apps.apple.com/app/windows-app/id1295203466
+    - Linux   : xfreerdp (sudo apt install freerdp2-x11)
+
+[10] (Opsional) Build dari source - butuh Go
+     https://go.dev/dl/
+
+---------------------------------------------------------------------
+B. LANGKAH CEPAT
+---------------------------------------------------------------------
+
+1. Install Tailscale di perangkat yang akan dipakai untuk RDP,
+   lalu login (link [6] dan [8]).
+
+2. Buat Tailscale Auth Key (link [7]) -> salin.
+
+3. Buat GitHub Token (link [4]) -> salin.
+
+4. Download RDP Generator (link [1]) dan jalankan:
+     Windows : klik dua kali rdp-generator.exe
+               (atau PowerShell: .\rdp-generator.exe -port 8787)
+     Linux/Mac: chmod +x rdp-generator && ./rdp-generator -port 8787
+   Buka browser: http://127.0.0.1:8787
+
+   Catatan Windows: jika muncul peringatan SmartScreen, klik
+   "More info" -> "Run anyway" (aplikasi ini open source, kodenya
+   bisa dicek di link [2]).
+
+5. Di dashboard, isi:
+     - GitHub Personal Access Token
+     - Tailscale Auth Key
+     - Edisi Windows: Windows Server 2022 (disarankan)
+     - Machine type: standardLinux32gb (4 core, 16 GB RAM)
+   Klik "Deploy Windows Lab".
+
+6. Tunggu worker selesai booting (beberapa menit; install pertama
+   lebih lama karena mengunduh Windows).
+
+7. Login RDP:
+     Alamat   : <IP-Tailscale>:3389   (contoh 100.x.x.x:3389)
+     Username : WinAdmin
+     Password : lihat kartu "Credentials" di dashboard
+   Alternatif lewat browser: http://<IP-Tailscale>:8006
+
+---------------------------------------------------------------------
+C. TIPS HEMAT KUOTA
+---------------------------------------------------------------------
+- Akun GitHub Free: 120 core-hours + 15 GB storage per bulan.
+- Mesin 4-core memakai 4 core-hours per jam (= sekitar 30 jam/bulan).
+  Mesin 2-core memakai 2 core-hours per jam (= sekitar 60 jam/bulan).
+- Stop Codespace kalau tidak dipakai (link [5]). Disk Windows tetap
+  tersimpan dan bisa dilanjutkan.
+- Codespace otomatis suspend saat idle, dan maksimal berjalan 12 jam.
+- Data hilang kalau Codespace DIHAPUS. Backup file penting.
+
+---------------------------------------------------------------------
+D. KEAMANAN
+---------------------------------------------------------------------
+- Jangan bagikan GitHub token dan Tailscale Auth Key ke siapa pun.
+- Hapus/revoke token jika sudah tidak dipakai:
+  https://github.com/settings/tokens
+- Batasi akses di Tailscale ACL (tag:winlab) agar hanya perangkat
+  kamu yang bisa menjangkau port 3389 dan 8006.
+- Ganti password WinAdmin setelah login pertama.
+
+---------------------------------------------------------------------
+E. MASALAH UMUM
+---------------------------------------------------------------------
+- Tidak bisa connect RDP     : pastikan Tailscale di perangkatmu
+                               aktif dan IP benar.
+- Deploy gagal / 403         : cek scope token (harus: codespace) dan
+                               sisa kuota Codespaces.
+- Windows lama boot          : normal di pemakaian pertama; tunggu.
+- Codespace mati sendiri     : kena batas idle/12 jam; start ulang
+                               dari dashboard atau link [5].
+
+---------------------------------------------------------------------
+F. KETENTUAN PENGGUNAAN
+---------------------------------------------------------------------
+- Gunakan untuk keperluan legal saja dan patuhi Terms of Service
+  GitHub, Tailscale, dan Microsoft.
+- Windows yang dipasang adalah versi Evaluation resmi Microsoft.
+- Produk digital: tidak ada pengembalian dana setelah file diakses,
+  kecuali ada kendala teknis dari sisi penjual.
+
+Selamat mencoba!
